@@ -21,11 +21,12 @@ jobs:
           - runs-on: windows-latest
             target: x64
             vc-redist: vc_redist.x64.exe
-            inno-arm64: "0"
+            # Passed to ISCC; a bare /D define (not /DNAME=value).
+            inno-define: ""
           - runs-on: windows-11-arm
             target: arm64
             vc-redist: vc_redist.arm64.exe
-            inno-arm64: "1"
+            inno-define: /DSABER_ARM64
     name: Build for Windows (${{ matrix.arch.target }})
     runs-on: ${{ matrix.arch.runs-on }}
     permissions:
@@ -80,9 +81,22 @@ jobs:
             echo "$USERPROFILE/.cargo/bin" >> $GITHUB_PATH
           fi
 
+      # Resolve dependencies before patching the pub cache, and skip pub get
+      # during the build so the patch below is not undone.
+      - name: Resolve dependencies
+        shell: bash
+        run: flutter pub get
+
+      # desktop_webview_window 0.3.2 only bundles the x64 WebView2 loader, so
+      # the arm64 build fails to link. Patch it with the arm64 loader.
+      - name: Patch WebView2 for arm64
+        if: ${{ matrix.arch.target == 'arm64' }}
+        shell: pwsh
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./patches/pre/patch_webview2_arm64.ps1
+
       - name: Build Windows
         shell: bash
-        run: flutter build windows
+        run: flutter build windows --no-pub
 
       - name: Download Visual C++ Redistributable
         shell: bash
@@ -92,7 +106,7 @@ jobs:
         run: choco install -y innosetup
 
       - name: Build Windows Installer
-        run: ISCC.exe /DSABER_ARM64=${{ matrix.arch.inno-arm64 }} installers/desktop_inno_script.iss
+        run: ISCC.exe ${{ matrix.arch.inno-define }} installers/desktop_inno_script.iss
 
       - name: Rename exe
         id: rename

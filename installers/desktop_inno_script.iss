@@ -9,12 +9,9 @@
 #define MyAppAssocName MyAppName + " Note"
 #define MyAppAssocKeyPrefix StringChange(MyAppAssocName, " ", "")
 
-; Target architecture. Pass /DSABER_ARM64=1 to build the arm64 installer,
-; or /DSABER_ARM64=0 (the default) to build the x64 installer.
-#ifndef SABER_ARM64
-  #define SABER_ARM64 0
-#endif
-#if SABER_ARM64
+; Target architecture. Pass a bare /DSABER_ARM64 on the ISCC command line to
+; build the arm64 installer, or omit it (the default) to build the x64 installer.
+#ifdef SABER_ARM64
   #define MyArch "arm64"
   #define MyArchAllowed "arm64"
   #define MyVcRedist "vc_redist.arm64.exe"
