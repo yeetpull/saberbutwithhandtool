@@ -21,6 +21,7 @@ class CanvasGestureDetector extends StatefulWidget {
     super.key,
     required this.filePath,
     required this.isDrawGesture,
+    this.isHandTool = false,
     this.onInteractionEnd,
     required this.onDrawStart,
     required this.onDrawUpdate,
@@ -43,6 +44,13 @@ class CanvasGestureDetector extends StatefulWidget {
   final String filePath;
 
   final bool Function(ScaleStartDetails scaleDetails) isDrawGesture;
+
+  /// Whether the hand tool is currently selected.
+  ///
+  /// When true, panning is always enabled and is not restricted to a single
+  /// axis, so that the user can freely scroll the canvas with the stylus.
+  final bool isHandTool;
+
   final ValueChanged<ScaleEndDetails>? onInteractionEnd;
   final ValueChanged<ScaleStartDetails> onDrawStart;
   final ValueChanged<ScaleUpdateDetails> onDrawUpdate;
@@ -491,8 +499,12 @@ class CanvasGestureDetectorState extends State<CanvasGestureDetector> {
                 return InteractiveCanvasViewer.builder(
                   minScale: zoomLockedValue ?? CanvasGestureDetector.kMinScale,
                   maxScale: zoomLockedValue ?? CanvasGestureDetector.kMaxScale,
-                  panEnabled: !singleFingerPanLock,
-                  panAxis: axisAlignedPanLock ? .aligned : .free,
+                  // The hand tool always allows panning, and ignores the
+                  // axis-aligned pan lock so the user can scroll freely.
+                  panEnabled: widget.isHandTool || !singleFingerPanLock,
+                  panAxis: (axisAlignedPanLock && !widget.isHandTool)
+                      ? .aligned
+                      : .free,
 
                   // Smoother scrolling fling gesture than the default
                   interactionEndFrictionCoefficient: 0.1,

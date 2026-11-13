@@ -81,8 +81,8 @@ class Translations$home$en {
 	/// en: 'Welcome to Saber'
 	String get welcome => 'Welcome to Saber';
 
-	/// en: 'The file you selected is not supported. Please select an sbn, sbn2, sba, or pdf file.'
-	String get invalidFormat => 'The file you selected is not supported. Please select an sbn, sbn2, sba, or pdf file.';
+	/// en: 'The file you selected is not supported. Please select an image, sbn, sbn2, sba, or pdf file.'
+	String get invalidFormat => 'The file you selected is not supported. Please select an image, sbn, sbn2, sba, or pdf file.';
 
 	/// en: 'No files found'
 	String get noFiles => 'No files found';
@@ -1064,6 +1064,9 @@ class Translations$editor$toolbar$en {
 
 	/// en: 'Toggle eraser (Ctrl E)'
 	String get toggleEraser => 'Toggle eraser (Ctrl E)';
+
+	/// en: 'Hand tool (Alt M)'
+	String get hand => 'Hand tool (Alt M)';
 
 	/// en: 'Images'
 	String get photo => 'Images';

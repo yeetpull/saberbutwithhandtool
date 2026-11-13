@@ -42,6 +42,7 @@ import 'package:saber/data/nextcloud/saber_syncer.dart';
 import 'package:saber/data/prefs.dart';
 import 'package:saber/data/tools/_tool.dart';
 import 'package:saber/data/tools/eraser.dart';
+import 'package:saber/data/tools/hand.dart';
 import 'package:saber/data/tools/highlighter.dart';
 import 'package:saber/data/tools/laser_pointer.dart';
 import 'package:saber/data/tools/pen.dart';
@@ -56,17 +57,28 @@ import 'package:super_clipboard/super_clipboard.dart';
 class const _PhotoInfo(final Uint8List bytes, final String extension);
 
 class Editor extends StatefulWidget {
-  new({super.key, String? path, this.customTitle, this.pdfPath})
-    : initialPath = path != null
-          ? Future.value(path)
-          : FileManager.newFilePath('/'),
-      needsNaming = path == null;
+  new({
+    super.key,
+    String? path,
+    this.customTitle,
+    this.pdfPath,
+    this.pdfBytes,
+  }) : initialPath = path != null
+           ? Future.value(path)
+           : FileManager.newFilePath('/'),
+       needsNaming = path == null;
 
   final Future<String> initialPath;
   final bool needsNaming;
 
   final String? customTitle;
   final String? pdfPath;
+
+  /// The bytes of a PDF to import into the new note.
+  ///
+  /// Used to import a PDF that isn't on disk (e.g. images converted to a
+  /// PDF in memory). Takes precedence over [pdfPath] when set.
+  final Uint8List? pdfBytes;
 
   /// The file extension used by the app.
   /// Files with this extension are
@@ -152,12 +164,14 @@ class EditorState extends State<Editor> {
         return Tool.textEditing;
       case .laserPointer:
         return LaserPointer.currentLaserPointer;
+      case .hand:
+        return Hand.currentHand;
     }
   }();
   Tool get currentTool => _currentTool;
   set currentTool(Tool tool) {
     _currentTool = tool;
-    if (tool is! Eraser) _lastNonEraserTool = tool;
+    if (tool is! Eraser && tool is! Hand) _lastNonEraserTool = tool;
     stows.lastTool.value = tool.toolId;
   }
 
@@ -173,6 +187,45 @@ class EditorState extends State<Editor> {
 
   /// The last non-Eraser [currentTool] value.
   late Tool _lastNonEraserTool = Pen.currentPen;
+
+  /// The last tool that was selected before switching to the [Hand] tool.
+  /// Used to return to it when the hand tool is toggled off.
+  late Tool _lastNonHandTool = Pen.currentPen;
+
+  /// Selects [tool], applying the special-case toggles for the eraser and
+  /// the hand tool. This is used by both the toolbar buttons and the
+  /// keyboard shortcuts.
+  void setTool(Tool tool) {
+    if (tool is Eraser && currentTool is Eraser) {
+      // setTool(Eraser) is a special case to toggle the eraser on/off
+      tool = _lastNonEraserTool;
+    } else if (tool is Hand && currentTool is Hand) {
+      // setTool(Hand) is a special case to toggle the hand tool on/off
+      tool = _lastNonHandTool;
+    }
+
+    if (tool is Hand && currentTool is! Hand) {
+      // entering hand mode: remember where we came from
+      _lastNonHandTool = currentTool;
+    } else if (tool is! Hand) {
+      _lastNonHandTool = tool;
+    }
+
+    currentTool = tool;
+
+    if (tool is Highlighter) {
+      Highlighter.currentHighlighter = tool;
+    } else if (tool is Pencil) {
+      Pencil.currentPencil = tool;
+    } else if (tool is Pen) {
+      Pen.currentPen = tool;
+    }
+
+    if (mounted) setState(() {});
+  }
+
+  /// Toggles between the [Hand] tool and the last used tool.
+  void toggleHandMode() => setTool(Hand.currentHand);
 
   /// If the stylus button is pressed, or was pressed, during the current draw gesture.
   ///
@@ -204,7 +257,9 @@ class EditorState extends State<Editor> {
 
     await _loadCoreInfo(filePath);
 
-    if (widget.pdfPath != null) {
+    if (widget.pdfBytes != null) {
+      await importPdfFromBytes(widget.pdfBytes!);
+    } else if (widget.pdfPath != null) {
       await importPdfFromFilePath(widget.pdfPath!);
     }
   }
@@ -263,7 +318,7 @@ class EditorState extends State<Editor> {
 
   void _setState() => setState(() {});
 
-  Keybinding? _ctrlZ, _ctrlY, _ctrlShiftZ;
+  Keybinding? _ctrlZ, _ctrlY, _ctrlShiftZ, _altM;
   void _assignKeybindings() {
     _ctrlZ = Keybinding([
       KeyCode.ctrl,
@@ -278,15 +333,22 @@ class EditorState extends State<Editor> {
       KeyCode.shift,
       KeyCode.from(LogicalKeyboardKey.keyZ),
     ], inclusive: true);
+    _altM = Keybinding([
+      // The left Alt key, as requested.
+      KeyCode.from(LogicalKeyboardKey.altLeft),
+      KeyCode.from(LogicalKeyboardKey.keyM),
+    ], inclusive: true);
     Keybinder.bind(_ctrlZ!, undo);
     Keybinder.bind(_ctrlY!, redo);
     Keybinder.bind(_ctrlShiftZ!, redo);
+    Keybinder.bind(_altM!, toggleHandMode);
   }
 
   void _removeKeybindings() {
     if (_ctrlZ != null) Keybinder.remove(_ctrlZ!);
     if (_ctrlY != null) Keybinder.remove(_ctrlY!);
     if (_ctrlShiftZ != null) Keybinder.remove(_ctrlShiftZ!);
+    if (_altM != null) Keybinder.remove(_altM!);
   }
 
   /// Creates pages until the given page index exists,
@@ -491,6 +553,10 @@ class EditorState extends State<Editor> {
   double? currentPressure;
   bool isDrawGesture(ScaleStartDetails details) {
     if (coreInfo.readOnly) return false;
+
+    // The hand tool pans the canvas instead of drawing,
+    // so this is never a draw gesture.
+    if (currentTool is Hand) return false;
 
     CanvasImage.activeListener
         .notifyListenersPlease(); // un-select active image
@@ -1285,8 +1351,23 @@ class EditorState extends State<Editor> {
     return importPdfFromFilePath(file.path!);
   }
 
-  Future<bool> importPdfFromFilePath(String path) async {
-    final pdfDocument = await coreInfo.assetCache.pdfDocumentCache.load(path);
+  Future<bool> importPdfFromFilePath(String path) => _importPdfDocument(path);
+
+  /// Imports a PDF that is held in memory, e.g. images that were converted
+  /// into a single PDF. The bytes are embedded into the note on save.
+  Future<bool> importPdfFromBytes(Uint8List bytes) => _importPdfDocument(
+    PdfEditorImage.cacheKeyForBytes(bytes),
+    pdfBytes: bytes,
+  );
+
+  Future<bool> _importPdfDocument(
+    String path, {
+    Uint8List? pdfBytes,
+  }) async {
+    final pdfDocument = await coreInfo.assetCache.pdfDocumentCache.load(
+      path,
+      pdfBytes: pdfBytes,
+    );
 
     final emptyPage = coreInfo.pages.removeLast();
     assert(emptyPage.isEmpty);
@@ -1304,8 +1385,8 @@ class EditorState extends State<Editor> {
         size: pageSize,
         backgroundImage: PdfEditorImage(
           id: coreInfo.nextImageId++,
-          pdfBytes: null,
-          pdfFile: File(path),
+          pdfBytes: pdfBytes,
+          pdfFile: pdfBytes == null ? File(path) : null,
           pdfPage: pdfPage.pageNumber - 1,
           pageIndex: coreInfo.pages.length,
           pageSize: pageSize,
@@ -1454,6 +1535,7 @@ class EditorState extends State<Editor> {
       key: _canvasGestureDetectorKey,
       filePath: coreInfo.filePath,
       isDrawGesture: isDrawGesture,
+      isHandTool: currentTool is Hand,
       onInteractionEnd: onInteractionEnd,
       onDrawStart: onDrawStart,
       onDrawUpdate: onDrawUpdate,
@@ -1504,24 +1586,8 @@ class EditorState extends State<Editor> {
         bottom: stows.editorToolbarAlignment.value != .up,
         child: Toolbar(
           readOnly: coreInfo.readOnly,
-          setTool: (tool) {
-            if (tool is Eraser && currentTool is Eraser) {
-              // setTool(Eraser) is a special case to toggle the eraser on/off
-              tool = _lastNonEraserTool;
-            }
-
-            currentTool = tool;
-
-            if (tool is Highlighter) {
-              Highlighter.currentHighlighter = tool;
-            } else if (tool is Pencil) {
-              Pencil.currentPencil = tool;
-            } else if (tool is Pen) {
-              Pen.currentPen = tool;
-            }
-
-            if (mounted) setState(() {});
-          },
+          setTool: setTool,
+          toggleHandMode: toggleHandMode,
           currentTool: currentTool,
           duplicateSelection: () {
             final select = currentTool as Select;

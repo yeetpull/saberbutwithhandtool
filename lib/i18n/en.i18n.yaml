@@ -21,7 +21,7 @@ home:
     newNote: New note
     importNote: Import note
   welcome: Welcome to Saber
-  invalidFormat: The file you selected is not supported. Please select an sbn, sbn2, sba, or pdf file.
+  invalidFormat: The file you selected is not supported. Please select an image, sbn, sbn2, sba, or pdf file.
   noFiles: No files found
   noPreviewAvailable: No preview available
   createNewNote: Tap the + button to create a new note
@@ -272,6 +272,7 @@ editor:
     toggleColors: Toggle colors (Ctrl C)
     select: Select
     toggleEraser: Toggle eraser (Ctrl E)
+    hand: Hand tool (Alt M)
     photo: Images
     text: Text
     toggleFingerDrawing: Toggle finger drawing (Ctrl F)

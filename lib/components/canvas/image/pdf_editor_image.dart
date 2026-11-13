@@ -15,6 +15,13 @@ class PdfEditorImage extends EditorImage {
 
   static final log = Logger('PdfEditorImage');
 
+  /// A stable cache key for a PDF held in memory as [bytes].
+  ///
+  /// All pages of the same PDF share one [Uint8List] instance, so this makes
+  /// them share a single loaded document in the [PdfDocumentCache].
+  static String cacheKeyForBytes(Uint8List bytes) =>
+      'inline_pdf_${identityHashCode(bytes)}.pdf';
+
   new({
     required super.id,
     required super.assetCache,
@@ -136,7 +143,7 @@ class PdfEditorImage extends EditorImage {
 
     assert(id != -1, 'id must be set before firstLoad is called');
     _pdfDocument.value ??= await assetCache.pdfDocumentCache.load(
-      pdfFile?.path ?? 'inline_pdf_$id.pdf',
+      pdfFile?.path ?? PdfEditorImage.cacheKeyForBytes(pdfBytes!),
       pdfBytes: pdfBytes,
     );
     await _pdfDocument.value!.pages[pdfPage].ensureLoaded();

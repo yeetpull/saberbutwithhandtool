@@ -255,6 +255,9 @@ class const App({super.key}) extends StatefulWidget {
         builder: (context, state) => Editor(
           path: state.uri.queryParameters['path'],
           pdfPath: state.uri.queryParameters['pdfPath'],
+          // Allows importing a PDF (e.g. images converted to a PDF) without
+          // writing it to disk first.
+          pdfBytes: state.extra is Uint8List ? state.extra as Uint8List : null,
         ),
       ),
       GoRoute(

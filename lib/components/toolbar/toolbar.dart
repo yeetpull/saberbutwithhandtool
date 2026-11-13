@@ -22,6 +22,7 @@ import 'package:saber/data/extensions/color_extensions.dart';
 import 'package:saber/data/prefs.dart';
 import 'package:saber/data/tools/_tool.dart';
 import 'package:saber/data/tools/eraser.dart';
+import 'package:saber/data/tools/hand.dart';
 import 'package:saber/data/tools/highlighter.dart';
 import 'package:saber/data/tools/laser_pointer.dart';
 import 'package:saber/data/tools/pen.dart';
@@ -34,6 +35,7 @@ class Toolbar extends StatefulWidget {
     super.key,
     required this.readOnly,
     required this.setTool,
+    required this.toggleHandMode,
     required this.currentTool,
     required this.setColor,
     required this.quillFocus,
@@ -56,6 +58,11 @@ class Toolbar extends StatefulWidget {
   final bool readOnly;
 
   final ValueChanged<Tool> setTool;
+
+  /// Toggles the hand tool on/off. When turned off, the last used tool is
+  /// restored.
+  final VoidCallback toggleHandMode;
+
   final Tool currentTool;
   final ValueChanged<Color> setColor;
 
@@ -447,6 +454,14 @@ class _ToolbarState extends State<Toolbar> {
                 onPressed: toggleEraser,
                 padding: buttonPadding,
                 child: const FaIcon(FontAwesomeIcons.eraser, size: 16),
+              ),
+              ToolbarIconButton(
+                tooltip: t.editor.toolbar.hand,
+                selected: widget.currentTool is Hand,
+                enabled: !widget.readOnly,
+                onPressed: widget.toggleHandMode,
+                padding: buttonPadding,
+                child: const Icon(Symbols.pan_tool),
               ),
               ToolbarIconButton(
                 tooltip: t.editor.toolbar.photo,

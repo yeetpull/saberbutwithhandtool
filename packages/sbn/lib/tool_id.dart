@@ -14,7 +14,13 @@ enum ToolId(final String id) {
   eraser('Eraser'),
   select('Select'),
   textEditing('TextEditingTool'),
-  laserPointer('LaserPointer');
+  laserPointer('LaserPointer'),
+  /// The hand tool pans the canvas instead of drawing.
+  ///
+  /// This must stay at the end of the enum because [codec] stores the
+  /// enum's index, so inserting a value in the middle would break
+  /// saved preferences.
+  hand('Hand');
 
   static const codec = EnumCodec(values);
 

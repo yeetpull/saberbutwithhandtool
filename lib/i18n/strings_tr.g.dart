@@ -70,7 +70,7 @@ class _Translations$home$tr extends Translations$home$en {
 	@override late final _Translations$home$tooltips$tr tooltips = _Translations$home$tooltips$tr._(_root);
 	@override late final _Translations$home$create$tr create = _Translations$home$create$tr._(_root);
 	@override String get welcome => 'Saber\'a hoş geldiniz';
-	@override String get invalidFormat => 'Seçtiğiniz dosya desteklenmiyor. Lütfen bir .sbn, .sbn2, .sba veya .pdf dosyası seçin.';
+	@override String get invalidFormat => 'Seçtiğiniz dosya desteklenmiyor. Lütfen bir resim, .sbn, .sbn2, .sba veya .pdf dosyası seçin.';
 	@override String get noFiles => 'Dosya yok';
 	@override String get noPreviewAvailable => 'Önizleme mevcut değil';
 	@override String get createNewNote => 'Yeni bir not oluşturmak için + butonuna tıklayınız';
@@ -675,6 +675,7 @@ class _Translations$editor$toolbar$tr extends Translations$editor$toolbar$en {
 	@override String get toggleColors => 'Renklere geç (Ctrl C)';
 	@override String get select => 'Seç';
 	@override String get toggleEraser => 'Silgiyi aktifleştir (Ctrl E)';
+	@override String get hand => 'El aracı (Alt M)';
 	@override String get photo => 'Fotoğraf';
 	@override String get text => 'Metin';
 	@override String get toggleFingerDrawing => 'Parmakla çizimi aktifleştir (Ctrl F)';

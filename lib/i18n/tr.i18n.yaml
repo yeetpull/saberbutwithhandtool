@@ -21,7 +21,7 @@ home:
     newNote: Yeni not
     importNote: Notu içeri aktar
   welcome: Saber'a hoş geldiniz
-  invalidFormat: Seçtiğiniz dosya desteklenmiyor. Lütfen bir .sbn, .sbn2, .sba veya .pdf dosyası seçin.
+  invalidFormat: Seçtiğiniz dosya desteklenmiyor. Lütfen bir resim, .sbn, .sbn2, .sba veya .pdf dosyası seçin.
   noFiles: Dosya yok
   noPreviewAvailable: Önizleme mevcut değil
   createNewNote: Yeni bir not oluşturmak için + butonuna tıklayınız
@@ -272,6 +272,7 @@ editor:
     toggleColors: Renklere geç (Ctrl C)
     select: Seç
     toggleEraser: Silgiyi aktifleştir (Ctrl E)
+    hand: El aracı (Alt M)
     photo: Fotoğraf
     text: Metin
     toggleFingerDrawing: Parmakla çizimi aktifleştir (Ctrl F)
