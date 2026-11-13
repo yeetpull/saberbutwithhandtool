@@ -3,13 +3,8 @@ name: Update saber_landing page
 on:
   # Enable manual run
   workflow_dispatch:
-  push:
-    tags:
-      - "**"
-    branches:
-      - "**"
-    paths:
-      - .github/workflows/update-landing-page.yml
+  # NOTE(fork): the push trigger was removed so that this fork only builds
+  # Linux and Windows release artifacts on tag pushes.
 
 jobs:
   dispatch:
