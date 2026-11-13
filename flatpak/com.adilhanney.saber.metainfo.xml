@@ -657,6 +657,14 @@
     </screenshots>
 
     <releases>
+        <release version="1.37.3" date="2026-11-13">
+            <description>
+                <ul>
+                    <li>Added a hand tool for panning the canvas (Left Alt+M).</li>
+                    <li>Added support for importing PNG and JPEG images as a new note, one image per page.</li>
+                </ul>
+            </description>
+        </release>
         <release version="1.37.2" date="2026-11-13">
             <description>
                 <ul>

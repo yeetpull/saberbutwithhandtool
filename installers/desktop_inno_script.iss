@@ -2,12 +2,27 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Saber"
-#define MyAppVersion "1.37.2"
+#define MyAppVersion "1.37.3"
 #define MyAppPublisher "Adil Hanney"
 #define MyAppURL "https://github.com/saber-notes/saber"
 #define MyAppExeName "saber.exe"
 #define MyAppAssocName MyAppName + " Note"
 #define MyAppAssocKeyPrefix StringChange(MyAppAssocName, " ", "")
+
+; Target architecture. Pass /DSABER_ARM64=1 to build the arm64 installer,
+; or /DSABER_ARM64=0 (the default) to build the x64 installer.
+#ifndef SABER_ARM64
+  #define SABER_ARM64 0
+#endif
+#if SABER_ARM64
+  #define MyArch "arm64"
+  #define MyArchAllowed "arm64"
+  #define MyVcRedist "vc_redist.arm64.exe"
+#else
+  #define MyArch "x64"
+  #define MyArchAllowed "x64compatible"
+  #define MyVcRedist "vc_redist.x64.exe"
+#endif
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -27,14 +42,14 @@ DisableProgramGroupPage=yes
 ;PrivilegesRequired=lowest
 OutputDir="{#SourcePath}"
 PrivilegesRequiredOverridesAllowed=dialog
-OutputBaseFilename=SaberInstaller
+OutputBaseFilename=SaberInstaller-{#MyArch}
 SetupIconFile="{#SourcePath}\..\windows\runner\resources\app_icon.ico"
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 ; 64 bit only
-ArchitecturesAllowed=x64compatible
-ArchitecturesInstallIn64BitMode=x64compatible
+ArchitecturesAllowed={#MyArchAllowed}
+ArchitecturesInstallIn64BitMode={#MyArchAllowed}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -44,9 +59,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: "{#SourcePath}\..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourcePath}\..\build\windows\{#MyArch}\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Visual C++ Redistributable
-Source: "{#SourcePath}\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall
+Source: "{#SourcePath}\{#MyVcRedist}"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall
 
 [Registry]
 Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".myp"; ValueData: ""
@@ -74,7 +89,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 InstallVCRedist=Install Visual C++ Redistributable
 
 [Run]
-Filename: "{tmp}\vc_redist.x64.exe"; \
+Filename: "{tmp}\{#MyVcRedist}"; \
   Description: "{cm:InstallVCRedist}"; \
   Parameters: "/quiet"; \
   Flags: waituntilterminated postinstall skipifsilent unchecked
