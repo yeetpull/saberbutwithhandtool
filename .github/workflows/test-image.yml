@@ -3,15 +3,6 @@ name: Build test environment OCI image
 on:
   schedule:
     - cron: '17 1 * * 3'
-  push:
-    tags:
-      - "**"
-    branches:
-      - main
-    paths:
-      - .github/docker/Dockerfile
-      - .github/workflows/test-image.yml
-      - lib/data/version.dart
   workflow_dispatch:
 
 permissions:

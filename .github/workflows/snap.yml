@@ -2,14 +2,8 @@ name: Build unofficial snap
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "**"
-    branches:
-      - "**"
-    paths:
-      - .github/workflows/snap.yml
-      - snap/snapcraft.yaml
+  # NOTE(fork): the push trigger was removed so that this fork only builds
+  # Linux and Windows release artifacts on tag pushes.
 
 jobs:
   build-snap:
